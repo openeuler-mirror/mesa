@@ -312,7 +312,8 @@ popd
 
 %files filesystem
 %defattr(-,root,root)
-%doc docs/Mesa-MLAA-License-Clarification-Email.txt
+%doc docs/Mesa-MLAA-License-Clarification-Email.txt docs/libGL.txt
+%license docs/license.html
 %dir %{_libdir}/dri
 %dir %{_libdir}/vdpau
 
@@ -457,6 +458,12 @@ popd
 %{_includedir}/vulkan/
 
 %changelog
+* Sat Oct 19 2019 openEuler Buildteam <buildteam@openeuler.org> - 19.2.2-5
+- Type:bugfix
+- Id:NA
+- SUG:NA
+- DESC:add the license file
+
 * Tue Sep 24 2019 openEuler Buildteam <buildteam@openeuler.org> - 19.2.2-4
 - Type: enhance
 - Id:NA
