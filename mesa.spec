@@ -24,24 +24,15 @@
 Name:           mesa
 Summary:        Mesa graphics libraries
 Version:        18.2.2
-Release:        4
+Release:        5
 License:        MIT
 URL:            https://www.mesa3d.org
-Source0:        %{name}-%{version}.tar.xz
-Source1:        vl_decoder.c
-Source2:        vl_mpeg12_decoder.c
+Source0:        https://mesa.freedesktop.org/archive/%{name}-%{version}.tar.xz
 Source3:        Makefile
-# src/gallium/auxiliary/postprocess/pp_mlaa* have an ... interestingly worded license.
-# Source4 contains email correspondence clarifying the license terms.
-Source4:        Mesa-MLAA-License-Clarification-Email.txt
 
 Patch1:         0001-llvm-SONAME-without-version.patch
 Patch3:         0003-evergreen-big-endian.patch
 Patch4:         0004-bigendian-assert.patch
-
-# Disable rgb10 configs by default:
-# https://bugzilla.redhat.com/show_bug.cgi?id=1560481
-Patch7:         0001-gallium-Disable-rgb10-configs-by-default.patch
 
 BuildRequires:  gcc gcc-c++ automake autoconf libtool kernel-headers libdrm-devel libXxf86vm-devel expat-devel
 BuildRequires:  xorg-x11-proto-devel imake libselinux-devel libXrandr-devel libXext-devel libXfixes-devel libXdamage-devel
@@ -236,14 +227,8 @@ Headers for development with the Vulkan API.
 %prep
 %autosetup -n %{name}-%{version} -p1
 
-cmp %{SOURCE1} src/gallium/auxiliary/vl/vl_decoder.c
-cmp %{SOURCE2} src/gallium/auxiliary/vl/vl_mpeg12_decoder.c
-cp %{SOURCE4} docs/
 
 %build
-cmp %{SOURCE1} src/gallium/auxiliary/vl/vl_decoder.c
-cmp %{SOURCE2} src/gallium/auxiliary/vl/vl_mpeg12_decoder.c
-
 autoreconf -ivf
 
 %ifarch %{ix86}
@@ -312,7 +297,7 @@ popd
 
 %files filesystem
 %defattr(-,root,root)
-%doc docs/Mesa-MLAA-License-Clarification-Email.txt docs/libGL.txt
+%doc docs/libGL.txt
 %license docs/license.html
 %dir %{_libdir}/dri
 %dir %{_libdir}/vdpau
