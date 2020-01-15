@@ -21,10 +21,12 @@
 
 %global sanitize 0
 
+%define with_opencl 0
+
 Name:           mesa
 Summary:        Mesa graphics libraries
 Version:        18.2.2
-Release:        5
+Release:        6
 License:        MIT
 URL:            https://www.mesa3d.org
 Source0:        https://mesa.freedesktop.org/archive/%{name}-%{version}.tar.xz
@@ -39,7 +41,11 @@ BuildRequires:  xorg-x11-proto-devel imake libselinux-devel libXrandr-devel libX
 BuildRequires:  libXi-devel libXmu-devel libxshmfence-devel elfutils python3 python2 gettext llvm-devel clang-devel
 BuildRequires:  elfutils-libelf-devel python3-libxml2 python2-libxml2 libudev-devel bison flex
 BuildRequires:  wayland-devel wayland-protocols-devel libvdpau-devel libva-devel zlib-devel
-BuildRequires:  libomxil-bellagio-devel libclc-devel opencl-filesystem vulkan-devel python3-mako python2-mako
+BuildRequires:  libomxil-bellagio-devel libclc-devel vulkan-devel python3-mako python2-mako
+%if 0%{?with_opencl}
+BuildRequires:  opencl-filesystem
+%endif
+
 %ifarch %{valgrind_arches}
 BuildRequires:  valgrind-devel
 %endif
@@ -179,6 +185,7 @@ Provides:       libglapi libglapi%{?_isa}
 %description    libglapi
 %{summary}.
 
+%if 0%{?with_opencl}
 %package        libOpenCL
 Summary:        Mesa OpenCL runtime library
 Requires:       ocl-icd%{?_isa}
@@ -195,6 +202,7 @@ Requires:       %{name}-libOpenCL%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{rele
 
 %description    libOpenCL-devel
 %{summary}.
+%endif
 
 %package        libd3d
 Summary:        Mesa Direct3D9 state tracker
@@ -281,6 +289,12 @@ mkdir -p %{buildroot}/%{_includedir}/vulkan/
 rm -f %{buildroot}/%{_includedir}/vulkan/vk_platform.h
 rm -f %{buildroot}/%{_includedir}/vulkan/vulkan.h
 
+%if ! 0%{?with_opencl}
+rm -f %{buildroot}%{_libdir}/libMesaOpenCL.so.*
+rm -f %{buildroot}%{_sysconfdir}/OpenCL/vendors/mesa.icd
+rm -f %{buildroot}%{_libdir}/libMesaOpenCL.so
+%endif
+
 %delete_la
 
 pushd %{buildroot}%{_libdir}
@@ -293,7 +307,9 @@ popd
 %ldconfig_scriptlets libOSMesa
 %ldconfig_scriptlets libgbm
 %ldconfig_scriptlets libxatracker
+%if 0%{?with_opencl}
 %ldconfig_scriptlets libOpenCL
+%endif
 
 %files filesystem
 %defattr(-,root,root)
@@ -369,6 +385,7 @@ popd
 %{_includedir}/xa_*.h
 %{_libdir}/pkgconfig/xatracker.pc
 
+%if 0%{?with_opencl}
 %files libOpenCL
 %defattr(-,root,root)
 %{_libdir}/libMesaOpenCL.so.*
@@ -377,6 +394,7 @@ popd
 %files libOpenCL-devel
 %defattr(-,root,root)
 %{_libdir}/libMesaOpenCL.so
+%endif
 
 %files libd3d
 %defattr(-,root,root)
@@ -443,19 +461,22 @@ popd
 %{_includedir}/vulkan/
 
 %changelog
-* Sat Oct 19 2019 openEuler Buildteam <buildteam@openeuler.org> - 19.2.2-5
+* Wed Jan 15 2020 openEuler Buildteam <buildteam@openeuler.org> - 18.2.2-6
+- disable opencl
+
+* Sat Oct 19 2019 openEuler Buildteam <buildteam@openeuler.org> - 18.2.2-5
 - Type:bugfix
 - Id:NA
 - SUG:NA
 - DESC:add the license file
 
-* Tue Sep 24 2019 openEuler Buildteam <buildteam@openeuler.org> - 19.2.2-4
+* Tue Sep 24 2019 openEuler Buildteam <buildteam@openeuler.org> - 18.2.2-4
 - Type: enhance
 - Id:NA
 - SUG:NA
 - DESC: rewrite it without merging packages
 
-* Sat Sep 21 2019 openEuler Buildteam <buildteam@openeuler.org> - 19.2.2-3
+* Sat Sep 21 2019 openEuler Buildteam <buildteam@openeuler.org> - 18.2.2-3
 - Type:bugfix
 - Id:NA
 - SUG:NA
