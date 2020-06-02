@@ -447,9 +447,6 @@ popd
 %defattr(-,root,root)
 %{_libdir}/vdpau/libvdpau_nouveau.so.1*
 %{_libdir}/vdpau/libvdpau_r*.so.1*
-%if 0%{?with_tegra}
-%{_libdir}/vdpau/libvdpau_tegra.so.1*
-%endif
 
 %files vulkan-drivers
 %ifarch %{ix86} x86_64
