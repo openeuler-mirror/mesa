@@ -1,13 +1,13 @@
 %undefine _annotated_build
 
-%define base_drivers swrast,nouveau,radeon,r200
+%define base_drivers nouveau,r100,r200
 
 %ifarch %{ix86} x86_64
 %define platform_drivers ,i915,i965
 %define with_vmware 1
-%define vulkan_drivers --with-vulkan-drivers=intel,radeon
+%define vulkan_drivers intel,amd
 %else
-%define vulkan_drivers --with-vulkan-drivers=radeon
+%define vulkan_drivers amd
 %endif
 
 %ifarch %{arm} aarch64
@@ -17,31 +17,37 @@
 %define with_vc4       1
 %endif
 
-%define dri_drivers --with-dri-drivers=%{?base_drivers}%{?platform_drivers}
+%ifnarch %{x86}
+%global with_asm 1
+%endif
+
+%define dri_drivers %{?base_drivers}%{?platform_drivers}
 
 %global sanitize 0
 
 %define with_opencl 0
+%define with_xa        1
+%define with_omx       1
 
 Name:           mesa
 Summary:        Mesa graphics libraries
-Version:        18.2.2
-Release:        6
+Version:        18.3.6
+Release:        1
 License:        MIT
 URL:            https://www.mesa3d.org
 Source0:        https://mesa.freedesktop.org/archive/%{name}-%{version}.tar.xz
 Source3:        Makefile
 
-Patch1:         0001-llvm-SONAME-without-version.patch
+
 Patch3:         0003-evergreen-big-endian.patch
-Patch4:         0004-bigendian-assert.patch
+Patch7:         0001-gallium-Disable-rgb10-configs-by-default.patch
 
 BuildRequires:  gcc gcc-c++ automake autoconf libtool kernel-headers libdrm-devel libXxf86vm-devel expat-devel
-BuildRequires:  xorg-x11-proto-devel imake libselinux-devel libXrandr-devel libXext-devel libXfixes-devel libXdamage-devel
-BuildRequires:  libXi-devel libXmu-devel libxshmfence-devel elfutils python3 python2 gettext llvm-devel clang-devel
-BuildRequires:  elfutils-libelf-devel python3-libxml2 python2-libxml2 libudev-devel bison flex
-BuildRequires:  wayland-devel wayland-protocols-devel libvdpau-devel libva-devel zlib-devel
-BuildRequires:  libomxil-bellagio-devel libclc-devel vulkan-devel python3-mako python2-mako
+BuildRequires:  xorg-x11-proto-devel imake libselinux-devel libXrandr-devel libXext-devel libXfixes-devel 
+BuildRequires:  libXi-devel libXmu-devel libxshmfence-devel elfutils python3 gettext llvm-devel clang-devel
+BuildRequires:  elfutils-libelf-devel libudev-devel bison flex meson gettext python3-devel libXdamage-devel
+BuildRequires:  wayland-devel wayland-protocols-devel libvdpau-devel libva-devel zlib-devel 
+BuildRequires:  libomxil-bellagio-devel libclc-devel vulkan-devel python3-mako libX11-devel 
 %if 0%{?with_opencl}
 BuildRequires:  opencl-filesystem
 %endif
@@ -237,44 +243,39 @@ Headers for development with the Vulkan API.
 
 
 %build
-autoreconf -ivf
-
-%ifarch %{ix86}
-%global asm_flags --disable-asm
-%endif
-
-%configure \
-    %{?asm_flags} \
-    --enable-libglvnd \
-    --enable-selinux \
-    --enable-gallium-osmesa \
-    --with-dri-driverdir=%{_libdir}/dri \
-    --enable-egl \
-    --disable-gles1 \
-    --enable-gles2 \
-    --disable-xvmc \
-    --enable-vdpau \
-    --enable-va \
-    --with-platforms=x11,drm,surfaceless,wayland \
-    --enable-shared-glapi \
-    --enable-gbm \
-    --enable-omx-bellagio \
-    --enable-opencl --enable-opencl-icd \
-    --enable-glx-tls \
-    --enable-texture-float=yes \
-    %{?vulkan_drivers} \
-    --enable-llvm \
-    --enable-llvm-shared-libs \
-    --enable-dri \
-    --enable-xa \
-    --enable-nine \
-    --with-gallium-drivers=%{?with_vmware:svga,}radeonsi,r600,swrast,%{?with_freedreno:freedreno,}%{?with_etnaviv:etnaviv,imx,}%{?with_tegra:tegra,}%{?with_vc4:vc4,}virgl,r300,nouveau \
-    %{?dri_drivers}
-
-%make_build MKDEP=/bin/true V=1
+%meson -Dcpp_std=gnu++11 \
+  -Dplatforms=x11,wayland,drm,surfaceless \
+  -Ddri3=true \
+  -Ddri-drivers=%{?dri_drivers} \
+  -Dgallium-drivers=swrast,virgl,r300,nouveau%{?with_vmware:,svga},radeonsi,r600%{?with_freedreno:,freedreno}%{?with_etnaviv:,etnaviv,imx}%{?with_tegra:,tegra}%{?with_vc4:,vc4} \
+  -Dgallium-vdpau=true \
+  -Dgallium-xvmc=false \
+  -Dgallium-omx=%{?with_omx:bellagio}%{!?with_omx:disabled} \
+  -Dgallium-va=true \
+  -Dgallium-xa=true \
+  -Dgallium-nine=true \
+  -Dgallium-opencl=%{?with_opencl:icd}%{!?with_opencl:disabled} \
+  -Dvulkan-drivers=%{?vulkan_drivers} \
+  -Dshared-glapi=true \
+  -Dgles1=false \
+  -Dgles2=true \
+  -Dopengl=true \
+  -Dgbm=true \
+  -Dglx=dri \
+  -Degl=true \
+  -Dglvnd=true \
+  -Dasm=%{?with_asm:true}%{!?with_asm:false} \
+  -Dllvm=true \
+  -Dshared-llvm=true \
+  -Dvalgrind=%{?with_valgrind:true}%{!?with_valgrind:false} \
+  -Dbuild-tests=false \
+  -Dselinux=true \
+  -Dosmesa=gallium \
+  %{nil}
+%meson_build   
 
 %install
-%make_install
+%meson_install
 
 rm -f %{buildroot}%{_libdir}/vdpau/*.so
 rm -f %{buildroot}%{_libdir}/libGLX_mesa.so
@@ -408,7 +409,8 @@ popd
 
 %files dri-drivers
 %defattr(-,root,root)
-%config(noreplace) %{_sysconfdir}/drirc
+%dir %{_datadir}/drirc.d
+%{_datadir}/drirc.d/00-mesa-defaults.conf
 %{_libdir}/dri/radeon_dri.so
 %{_libdir}/dri/r200_dri.so
 %{_libdir}/dri/nouveau_vieux_dri.so
@@ -461,6 +463,9 @@ popd
 %{_includedir}/vulkan/
 
 %changelog
+* Tue Jun 02 2020 songnannan <songnannan2@huawei.com> - 18.3.6-1
+- update to 18.3.6
+
 * Wed Jan 15 2020 openEuler Buildteam <buildteam@openeuler.org> - 18.2.2-6
 - disable opencl
 
