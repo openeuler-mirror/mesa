@@ -32,7 +32,7 @@
 Name:           mesa
 Summary:        Mesa graphics libraries
 Version:        18.3.6
-Release:        1
+Release:        2
 License:        MIT
 URL:            https://www.mesa3d.org
 Source0:        https://mesa.freedesktop.org/archive/%{name}-%{version}.tar.xz
@@ -68,6 +68,12 @@ Obsoletes:      mesa-dri-filesystem < %{?epoch:%{epoch}:}%{version}-%{release}
 %description    filesystem
 %{summary}.
 
+%package khr-devel
+Summary:        Mesa Khronos development headers
+
+%description khr-devel
+%{summary}.
+
 %package        libGL
 Summary:        Mesa libGL runtime libraries
 Requires:       %{name}-libglapi%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
@@ -80,6 +86,7 @@ Requires:       libglvnd-glx%{?_isa} >= 1:1.0.1-0.9
 Summary:        Mesa libGL development package
 Requires:       %{name}-libGL%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
 Requires:       libglvnd-devel%{?_isa}
+Requires:       %{name}-khr-devel%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
 Provides:       libGL-devel libGL-devel%{?_isa}
 
 %description    libGL-devel
@@ -95,6 +102,7 @@ Requires:       libglvnd-egl%{?_isa}
 %package        libEGL-devel
 Summary:        Mesa libEGL development package
 Requires:       %{name}-libEGL%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
+Requires:       %{name}-khr-devel%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
 Requires:       libglvnd-devel%{?_isa}
 Provides:       libEGL-devel libEGL-devel%{?_isa}
 
@@ -112,6 +120,7 @@ Requires:       libglvnd-gles%{?_isa}
 %package        libGLES-devel
 Summary:        Mesa libGLES development package
 Requires:       %{name}-libGLES%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
+Requires:       %{name}-khr-devel%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
 Requires:       libglvnd-devel%{?_isa}
 Provides:       libGLES-devel libGLES-devel%{?_isa}
 
@@ -319,6 +328,10 @@ popd
 %dir %{_libdir}/dri
 %dir %{_libdir}/vdpau
 
+%files khr-devel
+%dir %{_includedir}/KHR
+%{_includedir}/KHR/khrplatform.h
+
 %files libGL
 %defattr(-,root,root)
 %{_libdir}/libGLX_mesa.so.0*
@@ -340,7 +353,6 @@ popd
 %files libEGL-devel
 %defattr(-,root,root)
 %{_includedir}/EGL/egl*.h
-%{_includedir}/KHR/khrplatform.h
 %{_libdir}/pkgconfig/egl.pc
 
 %files libGLES
@@ -460,6 +472,9 @@ popd
 %{_includedir}/vulkan/
 
 %changelog
+* Wed Jun 03 2020 songnannan <songnannan2@huawei.com> - 18.3.6-2
+- add mesa-khr-header subpackage to hold <KHR/khrplatform.h>
+
 * Tue Jun 02 2020 songnannan <songnannan2@huawei.com> - 18.3.6-1
 - update to 18.3.6
 
