@@ -1,0 +1,33 @@
+From eba08aad979fbdeb2face8769dcdda80105e6b70 Mon Sep 17 00:00:00 2001
+From: satmandu <satmandu@satmandu.com>
+
+https://gitlab.freedesktop.org/mesa/mesa/-/issues/5067
+Subject: [PATCH] backport-fix-build-err-on-arm
+
+---
+ src/gallium/drivers/freedreno/freedreno_util.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/gallium/drivers/freedreno/freedreno_util.h b/src/gallium/drivers/freedreno/freedreno_util.h
+index 5e00657..29d5df3 100644
+--- a/src/gallium/drivers/freedreno/freedreno_util.h
++++ b/src/gallium/drivers/freedreno/freedreno_util.h
+@@ -44,6 +44,15 @@
+ #include "adreno_pm4.xml.h"
+ #include "disasm.h"
+ 
++#include <unistd.h>
++#include <sys/syscall.h>
++
++#ifndef SYS_gettid
++#error "SYS_gettid unavailable on this system"
++#endif
++
++#define gettid() ((pid_t)syscall(SYS_gettid))
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+-- 
+2.27.0
+
