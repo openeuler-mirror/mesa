@@ -1,138 +1,106 @@
-%undefine _annotated_build
+%global llvm_toolset %{nil}
+%global llvm_pkg_prefix %{nil}
 
-%ifnarch s390x
-%global with_hardware 1
-
-%if 0%{?openeuler}
-%bcond_without vdpau 
-%bcond_without nine 
-%bcond_without omx
+%ifarch s390x
+%define with_hardware 0
 %else
-%bcond_with vdpau
-%bcond_with nine
-%bcond_with omx
-%endif
-
-%bcond_without vaapi 
-%bcond_with    opencl  
-%global base_drivers nouveau,r100,r200
+%define with_hardware 1
+%define with_vdpau 1
 %endif
 
 %ifarch %{ix86} x86_64
-%global platform_drivers ,i915,i965
-%global with_iris   1
-%global with_vmware 1
-%if 0%{?openeuler}
-%global with_xa     1
+%define platform_drivers i965
+%define with_vmware 1
+%define with_xa     1
+%define with_iris   1
 %endif
-%global vulkan_drivers intel,amd
+
+%ifarch %{ix86} x86_64
+%define with_vulkan_hw 1
 %else
-%ifnarch s390x
-%global vulkan_drivers amd
-%endif
+%define with_vulkan_hw 0
 %endif
 
 %ifarch %{arm} aarch64
-%global with_etnaviv   1
-%global with_freedreno 1
-%global with_kmsro     1
-%global with_lima      1
-%global with_panfrost  1
-%global with_tegra     1
-%global with_vc4       1
-%global with_v3d       1
-%if 0%{?openeuler}
-%global with_xa     1
-%endif
+%define with_xa        1
 %endif
 
-%ifnarch %{arm} s390x
-%global with_radeonsi 1
-%endif
+%global dri_drivers %{?platform_drivers}
 
-%ifnarch %{x86}
-%global with_asm 1
-%endif
-
-%ifarch %{valgrind_arches}
-%bcond_without valgrind
+%if 0%{?with_vulkan_hw}
+%define vulkan_drivers swrast,intel,amd
 %else
-%bcond_with valgrind
+%define vulkan_drivers swrast
 %endif
 
-%global dri_drivers %{?base_drivers}%{?platform_drivers}
+%global sanitize 0
 
 Name:           mesa
 Summary:        Mesa graphics libraries
-Version:        20.1.4
-Release:        2
+Version:        21.3.1
+Release:        1
+
 License:        MIT
 URL:            http://www.mesa3d.org
-
 Source0:        https://mesa.freedesktop.org/archive/%{name}-%{version}.tar.xz
 
-Patch3:         0001-evergreen-big-endian.patch
+Patch1:         backport-fix-build-err-on-arm.patch
+Patch2:         0001-evergreen-big-endian.patch
 
-BuildRequires:  meson >= 0.45
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
-BuildRequires:  gettext
 
-%if 0%{?with_hardware}
+BuildRequires:  meson >= 0.45
+%if %{with_hardware}
 BuildRequires:  kernel-headers
 %endif
-BuildRequires:  pkgconfig(libdrm) >= 2.4.97
-BuildRequires:  pkgconfig(expat)
-BuildRequires:  pkgconfig(zlib) >= 1.2.3
-BuildRequires:  pkgconfig(libselinux)
-BuildRequires:  pkgconfig(wayland-scanner)
-BuildRequires:  pkgconfig(wayland-protocols) >= 1.8
-BuildRequires:  pkgconfig(wayland-client) >= 1.11
-BuildRequires:  pkgconfig(wayland-server) >= 1.11
-BuildRequires:  pkgconfig(wayland-egl-backend) >= 3
-BuildRequires:  pkgconfig(x11)
-BuildRequires:  pkgconfig(xext)
-BuildRequires:  pkgconfig(xdamage) >= 1.1
-BuildRequires:  pkgconfig(xfixes)
-BuildRequires:  pkgconfig(xcb-glx) >= 1.8.1
-BuildRequires:  pkgconfig(xxf86vm)
-BuildRequires:  pkgconfig(xcb)
-BuildRequires:  pkgconfig(x11-xcb)
-BuildRequires:  pkgconfig(xcb-dri2) >= 1.8
-BuildRequires:  pkgconfig(xcb-dri3)
-BuildRequires:  pkgconfig(xcb-present)
-BuildRequires:  pkgconfig(xcb-sync)
-BuildRequires:  pkgconfig(xshmfence) >= 1.1
-BuildRequires:  pkgconfig(dri2proto) >= 2.8
-BuildRequires:  pkgconfig(glproto) >= 1.4.14
-BuildRequires:  pkgconfig(xcb-xfixes)
-BuildRequires:  pkgconfig(xcb-randr)
-BuildRequires:  pkgconfig(xrandr) >= 1.3
-BuildRequires:  bison
-BuildRequires:  flex
+BuildRequires:  libdrm-devel >= 2.4.103
+BuildRequires:  libXxf86vm-devel
+BuildRequires:  expat-devel
+BuildRequires:  xorg-x11-proto-devel
+BuildRequires:  libselinux-devel
+BuildRequires:  libXext-devel
+BuildRequires:  libXfixes-devel
+BuildRequires:  libXdamage-devel
+BuildRequires:  libXi-devel
+BuildRequires:  libXrandr-devel
+BuildRequires:  libXmu-devel
+BuildRequires:  libxshmfence-devel
+BuildRequires:  elfutils
+BuildRequires:  python3-devel
+BuildRequires:  gettext
+BuildRequires: %{llvm_pkg_prefix}llvm-devel >= 3.4-7
+%if 0%{?with_opencl}
+BuildRequires: %{llvm_pkg_prefix}clang-devel >= 3.0
+%endif
+BuildRequires: elfutils-libelf-devel
+BuildRequires: libudev-devel
+BuildRequires: bison flex
+BuildRequires: pkgconfig(wayland-client)
+BuildRequires: pkgconfig(wayland-server)
+BuildRequires: pkgconfig(wayland-protocols)
 %if 0%{?with_vdpau}
-BuildRequires:  pkgconfig(vdpau) >= 1.1
+BuildRequires: libvdpau-devel
 %endif
 %if 0%{?with_vaapi}
-BuildRequires:  pkgconfig(libva) >= 0.38.0
+BuildRequires: libva-devel
 %endif
+BuildRequires: pkgconfig(zlib)
 %if 0%{?with_omx}
-BuildRequires:  pkgconfig(libomxil-bellagio)
+BuildRequires: libomxil-bellagio-devel
 %endif
-BuildRequires:  pkgconfig(libelf)
-BuildRequires:  pkgconfig(libglvnd) >= 0.2.0
-BuildRequires:  llvm-devel >= 7.0.0
 %if 0%{?with_opencl}
-BuildRequires:  clang-devel
-BuildRequires:  pkgconfig(libclc)
+BuildRequires: libclc-devel opencl-filesystem
 %endif
-%if %{with valgrind}
-BuildRequires:  pkgconfig(valgrind)
+BuildRequires: python3-mako
+%ifarch %{valgrind_arches}
+BuildRequires: pkgconfig(valgrind)
 %endif
-BuildRequires:  python3-devel
-BuildRequires:  python3-mako
-%if 0%{?with_hardware}
-BuildRequires:  vulkan-headers
+BuildRequires: pkgconfig(libglvnd) >= 1.2.0
+
+%if 0%{?rhel} == 7
+BuildRequires: llvm-toolset-7-runtime
+%enable_llvmtoolset7
 %endif
 
 %description
@@ -149,15 +117,15 @@ Obsoletes:      mesa-dri-filesystem < %{?epoch:%{epoch}:}%{version}-%{release}
 %package libGL
 Summary:        Mesa libGL runtime libraries
 Requires:       %{name}-libglapi%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
-Requires:       libglvnd-glx%{?_isa} >= 1:1.0.1-0.9
-
+Requires:       libglvnd-glx%{?_isa} >= 1:1.2.0-1
+ 
 %description libGL
 %{summary}.
 
 %package libGL-devel
 Summary:        Mesa libGL development package
 Requires:       %{name}-libGL%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
-Requires:       libglvnd-devel%{?_isa}
+Requires:       libglvnd-devel%{?_isa} >= 1:1.2.0-1
 Provides:       libGL-devel
 Provides:       libGL-devel%{?_isa}
 
@@ -166,7 +134,7 @@ Provides:       libGL-devel%{?_isa}
 
 %package libEGL
 Summary:        Mesa libEGL runtime libraries
-Requires:       libglvnd-egl%{?_isa}
+Requires:       libglvnd-egl%{?_isa} >= 1:1.2.0-1
 
 %description libEGL
 %{summary}.
@@ -174,8 +142,7 @@ Requires:       libglvnd-egl%{?_isa}
 %package libEGL-devel
 Summary:        Mesa libEGL development package
 Requires:       %{name}-libEGL%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
-Requires:       libglvnd-devel%{?_isa}
-Requires:       %{name}-khr-devel%{?_isa}
+Requires:       libglvnd-devel%{?_isa} >= 1:1.2.0-1
 Provides:       libEGL-devel
 Provides:       libEGL-devel%{?_isa}
 
@@ -185,6 +152,7 @@ Provides:       libEGL-devel%{?_isa}
 %package dri-drivers
 Summary:        Mesa-based DRI drivers
 Requires:       %{name}-filesystem%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
+Requires:	libdrm >= 2.4.103
 
 %description dri-drivers
 %{summary}.
@@ -308,6 +276,7 @@ Requires:       vulkan%{_isa}
 %description vulkan-drivers
 The drivers with support for the Vulkan API.
 
+%if 0%{?with_vulkan_hw}
 %package vulkan-devel
 Summary:        Mesa Vulkan development files
 Requires:       %{name}-vulkan-drivers%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
@@ -315,6 +284,7 @@ Requires:       vulkan-devel
 
 %description vulkan-devel
 Headers for development with the Vulkan API.
+%endif
 
 %prep
 %autosetup -n %{name}-%{version} -p1
@@ -322,24 +292,16 @@ Headers for development with the Vulkan API.
 # Make sure the build uses gnu++14 as llvm 10 headers require that
 sed -i -e 's/cpp_std=gnu++11/cpp_std=gnu++14/g' meson.build
 
-# cElementTree no longer exists in Python 3.9
-sed -i -e 's/import xml.etree.cElementTree/import xml.etree.ElementTree/g' \
-    src/amd/vulkan/radv_extensions.py \
-    src/freedreno/vulkan/tu_extensions.py \
-    src/intel/vulkan/anv_extensions_gen.py
-
 %build
-
-# Build with -fcommon until the omx build with gcc10 is fixed upstream
-# https://gitlab.freedesktop.org/mesa/mesa/issues/2385
-%global optflags %{optflags} -fcommon
-
+export ASFLAGS="--generate-missing-build-notes=yes"
 %meson -Dcpp_std=gnu++14 \
-  -Dplatforms=x11,wayland,drm,surfaceless \
-  -Ddri3=true \
+  -Db_ndebug=true \
+  -Dplatforms=x11,wayland \
+  -Ddri3=enabled \
   -Ddri-drivers=%{?dri_drivers} \
+  -Dosmesa=true \
 %if 0%{?with_hardware}
-  -Dgallium-drivers=swrast,virgl,r300,nouveau%{?with_iris:,iris}%{?with_vmware:,svga}%{?with_radeonsi:,radeonsi,r600}%{?with_freedreno:,freedreno}%{?with_etnaviv:,etnaviv}%{?with_tegra:,tegra}%{?with_vc4:,vc4}%{?with_v3d:,v3d}%{?with_kmsro:,kmsro}%{?with_lima:,lima}%{?with_panfrost:,panfrost} \
+  -Dgallium-drivers=swrast%{?with_iris:,iris},virgl,nouveau%{?with_vmware:,svga},radeonsi,r600%{?with_freedreno:,freedreno}%{?with_etnaviv:,etnaviv}%{?with_tegra:,tegra}%{?with_vc4:,vc4}%{?with_kmsro:,kmsro} \
 %else
   -Dgallium-drivers=swrast,virgl \
 %endif
@@ -349,30 +311,31 @@ sed -i -e 's/import xml.etree.cElementTree/import xml.etree.ElementTree/g' \
   -Dgallium-va=%{?with_vaapi:true}%{!?with_vaapi:false} \
   -Dgallium-xa=%{?with_xa:true}%{!?with_xa:false} \
   -Dgallium-nine=%{?with_nine:true}%{!?with_nine:false} \
-  -Dgallium-opencl=disabled \
+  -Dgallium-opencl=%{?with_opencl:icd}%{!?with_opencl:disabled} \
   -Dvulkan-drivers=%{?vulkan_drivers} \
-  -Dshared-glapi=true \
-  -Dgles1=false \
-  -Dgles2=true \
+  -Dvulkan-layers=device-select \
+  -Dshared-glapi=enabled \
+  -Dgles1=disabled \
+  -Dgles2=enabled \
   -Dopengl=true \
-  -Dgbm=true \
+  -Dgbm=enabled \
   -Dglx=dri \
   -Degl=true \
   -Dglvnd=true \
-  -Dasm=%{?with_asm:true}%{!?with_asm:false} \
+  -Dmicrosoft-clc=disabled \
   -Dllvm=true \
   -Dshared-llvm=true \
   -Dvalgrind=%{?with_valgrind:true}%{!?with_valgrind:false} \
   -Dbuild-tests=false \
   -Dselinux=true \
-  -Dosmesa=gallium \
-  -Dvulkan-device-select-layer=true \
   %{nil}
 %meson_build
 
+%check
+%meson_test
+
 %install
 %meson_install
-
 # libvdpau opens the versioned name, don't bother including the unversioned
 rm -vf %{buildroot}%{_libdir}/vdpau/*.so
 # likewise glvnd
@@ -385,16 +348,25 @@ rm -vf %{buildroot}%{_libdir}/libGLES*
 # determine the vendor
 ln -s %{_libdir}/libGLX_mesa.so.0 %{buildroot}%{_libdir}/libGLX_system.so.0
 
+# strip out useless headers
+rm -f %{buildroot}%{_includedir}/GL/w*.h
+
+# these are shipped already in vulkan-devel
+rm -f %{buildroot}/%{_includedir}/vulkan/vk_platform.h
+rm -f %{buildroot}/%{_includedir}/vulkan/vulkan.h
+
+# remove .la files
+find %{buildroot} -name '*.la' -delete
+
 # this keeps breaking, check it early.  note that the exit from eu-ftr is odd.
 pushd %{buildroot}%{_libdir}
 for i in libOSMesa*.so libGL.so ; do
     eu-findtextrel $i && exit 1
 done
-popd
 
 %files filesystem
 %dir %{_libdir}/dri
-%if 0%{?with_hardware}
+%if %{with_hardware}
 %if 0%{?with_vdpau}
 %dir %{_libdir}/vdpau
 %endif
@@ -417,12 +389,14 @@ popd
 %{_includedir}/EGL/eglmesaext.h
 %{_includedir}/EGL/eglextchromium.h
 
-%ldconfig_scriptlets libglapi
+%post libglapi -p /sbin/ldconfig
+%postun libglapi -p /sbin/ldconfig
 %files libglapi
 %{_libdir}/libglapi.so.0
 %{_libdir}/libglapi.so.0.*
 
-%ldconfig_scriptlets libOSMesa
+%post libOSMesa -p /sbin/ldconfig
+%postun libOSMesa -p /sbin/ldconfig
 %files libOSMesa
 %{_libdir}/libOSMesa.so.8*
 %files libOSMesa-devel
@@ -431,7 +405,8 @@ popd
 %{_libdir}/libOSMesa.so
 %{_libdir}/pkgconfig/osmesa.pc
 
-%ldconfig_scriptlets libgbm
+%post libgbm -p /sbin/ldconfig
+%postun libgbm -p /sbin/ldconfig
 %files libgbm
 %{_libdir}/libgbm.so.1
 %{_libdir}/libgbm.so.1.*
@@ -441,15 +416,16 @@ popd
 %{_libdir}/pkgconfig/gbm.pc
 
 %if 0%{?with_xa}
-%ldconfig_scriptlets libxatracker
+%post libxatracker -p /sbin/ldconfig
+%postun libxatracker -p /sbin/ldconfig
 %files libxatracker
-%if 0%{?with_hardware}
+%if %{with_hardware}
 %{_libdir}/libxatracker.so.2
 %{_libdir}/libxatracker.so.2.*
 %endif
 
 %files libxatracker-devel
-%if 0%{?with_hardware}
+%if %{with_hardware}
 %{_libdir}/libxatracker.so
 %{_includedir}/xa_tracker.h
 %{_includedir}/xa_composite.h
@@ -459,7 +435,8 @@ popd
 %endif
 
 %if 0%{?with_opencl}
-%ldconfig_scriptlets libOpenCL
+%post libOpenCL -p /sbin/ldconfig
+%postun libOpenCL -p /sbin/ldconfig
 %files libOpenCL
 %{_libdir}/libMesaOpenCL.so.*
 %{_sysconfdir}/OpenCL/vendors/mesa.icd
@@ -471,7 +448,7 @@ popd
 %files libd3d
 %dir %{_libdir}/d3d/
 %{_libdir}/d3d/*.so.*
-
+ 
 %files libd3d-devel
 %{_libdir}/pkgconfig/d3d.pc
 %{_includedir}/d3dadapter/
@@ -481,31 +458,15 @@ popd
 %files dri-drivers
 %dir %{_datadir}/drirc.d
 %{_datadir}/drirc.d/00-mesa-defaults.conf
-%if 0%{?with_hardware}
-%{_libdir}/dri/radeon_dri.so
-%{_libdir}/dri/r200_dri.so
-%{_libdir}/dri/nouveau_vieux_dri.so
-%{_libdir}/dri/r300_dri.so
-%if 0%{?with_radeonsi}
+%if %{with_hardware}
 %{_libdir}/dri/r600_dri.so
 %{_libdir}/dri/radeonsi_dri.so
-%endif
 %ifarch %{ix86} x86_64
-%{_libdir}/dri/i915_dri.so
 %{_libdir}/dri/i965_dri.so
 %{_libdir}/dri/iris_dri.so
 %endif
-%ifarch %{arm} aarch64
-%{_libdir}/dri/ingenic-drm_dri.so
-%{_libdir}/dri/mcde_dri.so
-%{_libdir}/dri/mxsfb-drm_dri.so
-%{_libdir}/dri/stm_dri.so
-%endif
 %if 0%{?with_vc4}
 %{_libdir}/dri/vc4_dri.so
-%endif
-%if 0%{?with_v3d}
-%{_libdir}/dri/v3d_dri.so
 %endif
 %if 0%{?with_freedreno}
 %{_libdir}/dri/kgsl_dri.so
@@ -515,53 +476,16 @@ popd
 %{_libdir}/dri/etnaviv_dri.so
 %{_libdir}/dri/imx-drm_dri.so
 %endif
-%if 0%{?with_tegra}
-%{_libdir}/dri/tegra_dri.so
-%endif
-%if 0%{?with_lima}
-%{_libdir}/dri/lima_dri.so
-%endif
-%if 0%{?with_panfrost}
-%{_libdir}/dri/panfrost_dri.so
-%endif
 %{_libdir}/dri/nouveau_dri.so
 %if 0%{?with_vmware}
 %{_libdir}/dri/vmwgfx_dri.so
 %endif
-%if 0%{?with_vaapi}
-%{_libdir}/dri/nouveau_drv_video.so
-%endif
-%if 0%{?with_radeonsi}
-%if 0%{?with_vaapi}
-%{_libdir}/dri/r600_drv_video.so
-%{_libdir}/dri/radeonsi_drv_video.so
-%endif
-%endif
-%endif
-%if 0%{?with_opencl}
-%dir %{_libdir}/gallium-pipe
-%{_libdir}/gallium-pipe/*.so
-%endif
-%if 0%{?with_kmsro}
-%{_libdir}/dri/armada-drm_dri.so
-%{_libdir}/dri/exynos_dri.so
-%{_libdir}/dri/hx8357d_dri.so
-%{_libdir}/dri/ili9225_dri.so
-%{_libdir}/dri/ili9341_dri.so
-%{_libdir}/dri/meson_dri.so
-%{_libdir}/dri/mi0283qt_dri.so
-%{_libdir}/dri/pl111_dri.so
-%{_libdir}/dri/repaper_dri.so
-%{_libdir}/dri/rockchip_dri.so
-%{_libdir}/dri/st7586_dri.so
-%{_libdir}/dri/st7735r_dri.so
-%{_libdir}/dri/sun4i-drm_dri.so
 %endif
 %{_libdir}/dri/kms_swrast_dri.so
 %{_libdir}/dri/swrast_dri.so
 %{_libdir}/dri/virtio_gpu_dri.so
 
-%if 0%{?with_hardware}
+%if %{with_hardware}
 %if 0%{?with_omx}
 %files omx-drivers
 %{_libdir}/bellagio/libomx_mesa.so
@@ -569,34 +493,37 @@ popd
 %if 0%{?with_vdpau}
 %files vdpau-drivers
 %{_libdir}/vdpau/libvdpau_nouveau.so.1*
-%{_libdir}/vdpau/libvdpau_r300.so.1*
-%if 0%{?with_radeonsi}
 %{_libdir}/vdpau/libvdpau_r600.so.1*
 %{_libdir}/vdpau/libvdpau_radeonsi.so.1*
 %endif
 %endif
-%endif
 
 %files vulkan-drivers
-%if 0%{?with_hardware}
-%ifarch %{ix86} x86_64
+%if 0%{?with_vulkan_hw}
 %{_libdir}/libvulkan_intel.so
-%{_datadir}/vulkan/icd.d/intel_icd.*.json
-%endif
 %{_libdir}/libvulkan_radeon.so
-%{_datadir}/vulkan/icd.d/radeon_icd.*.json
+%ifarch x86_64
+%{_datadir}/vulkan/icd.d/intel_icd.x86_64.json
+%{_datadir}/vulkan/icd.d/radeon_icd.x86_64.json
+%else
+%{_datadir}/vulkan/icd.d/intel_icd.i686.json
+%{_datadir}/vulkan/icd.d/radeon_icd.i686.json
+%endif
+%endif
+%{_libdir}/libvulkan_lvp.so
+%{_datadir}/vulkan/icd.d/lvp_icd.*.json
 %{_libdir}/libVkLayer_MESA_device_select.so
 %{_datadir}/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
-%endif
 
+%if 0%{?with_vulkan_hw}
 %files vulkan-devel
-%if 0%{?with_hardware}
-%ifarch %{ix86} x86_64
-%{_includedir}/vulkan/vulkan_intel.h
-%endif
 %endif
 
 %changelog
+* Thu Sep 16 2021 hanhui <hanhui15@huawei.com> - 21.3.1-1
+- upgrade to mesa-21.3.1
+- enable check
+
 * Thu Mar 25 2021 yanan <yanan@huawei.com> - 20.1.4-2
 - optimize the mesa spec
 
