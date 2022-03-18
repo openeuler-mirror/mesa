@@ -26,11 +26,16 @@
 %endif
 
 %global dri_drivers %{?platform_drivers}
+%ifarch riscv64
+%global dri_drivers nouveau
+%endif
 
 %if 0%{?with_vulkan_hw}
 %define vulkan_drivers swrast,intel,amd
 %else
+%ifnarch riscv64
 %define vulkan_drivers swrast
+%endif
 %endif
 
 %global sanitize 0
@@ -38,7 +43,7 @@
 Name:           mesa
 Summary:        Mesa graphics libraries
 Version:        21.3.1
-Release:        1
+Release:        2
 
 License:        MIT
 URL:            http://www.mesa3d.org
@@ -47,7 +52,7 @@ Source0:        https://mesa.freedesktop.org/archive/%{name}-%{version}.tar.xz
 Patch1:         backport-fix-build-err-on-arm.patch
 Patch2:         0001-evergreen-big-endian.patch
 
-BuildRequires:  gcc
+BuildRequires:  gcc >= 10.2
 BuildRequires:  gcc-c++
 
 BuildRequires:  meson >= 0.45
@@ -67,7 +72,7 @@ BuildRequires:  libXrandr-devel
 BuildRequires:  libXmu-devel
 BuildRequires:  libxshmfence-devel
 BuildRequires:  elfutils
-BuildRequires:  python3-devel
+BuildRequires:  python3-devel >= 3.8
 BuildRequires:  gettext
 BuildRequires: %{llvm_pkg_prefix}llvm-devel >= 3.4-7
 %if 0%{?with_opencl}
@@ -477,6 +482,9 @@ done
 %{_libdir}/dri/imx-drm_dri.so
 %endif
 %{_libdir}/dri/nouveau_dri.so
+%ifarch riscv64
+%{_libdir}/dri/nouveau_vieux_dri.so
+%endif
 %if 0%{?with_vmware}
 %{_libdir}/dri/vmwgfx_dri.so
 %endif
@@ -502,24 +510,24 @@ done
 %if 0%{?with_vulkan_hw}
 %{_libdir}/libvulkan_intel.so
 %{_libdir}/libvulkan_radeon.so
-%ifarch x86_64
-%{_datadir}/vulkan/icd.d/intel_icd.x86_64.json
-%{_datadir}/vulkan/icd.d/radeon_icd.x86_64.json
-%else
-%{_datadir}/vulkan/icd.d/intel_icd.i686.json
-%{_datadir}/vulkan/icd.d/radeon_icd.i686.json
-%endif
-%endif
+%{_datadir}/vulkan/icd.d/intel_icd.*.json
+%{_datadir}/vulkan/icd.d/radeon_icd.*.json
 %{_libdir}/libvulkan_lvp.so
 %{_datadir}/vulkan/icd.d/lvp_icd.*.json
 %{_libdir}/libVkLayer_MESA_device_select.so
 %{_datadir}/vulkan/implicit_layer.d/VkLayer_MESA_device_select.json
+%endif
 
 %if 0%{?with_vulkan_hw}
 %files vulkan-devel
 %endif
 
 %changelog
+* Thu Mar 10 2022 Jingwiw <ixoote@gmail.com> - 21.3.1-2
+- remove vulkan support for riscv64
+- force gcc version >= 10.2 to avoid segmentation fault
+- define dri_drivers for rv64 as nouveau
+
 * Thu Sep 16 2021 hanhui <hanhui15@huawei.com> - 21.3.1-1
 - upgrade to mesa-21.3.1
 - enable check
