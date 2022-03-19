@@ -72,7 +72,7 @@ BuildRequires:  libXrandr-devel
 BuildRequires:  libXmu-devel
 BuildRequires:  libxshmfence-devel
 BuildRequires:  elfutils
-BuildRequires:  python3-devel
+BuildRequires:  python3-devel >= 3.8
 BuildRequires:  gettext
 BuildRequires: %{llvm_pkg_prefix}llvm-devel >= 3.4-7
 %if 0%{?with_opencl}
