@@ -38,7 +38,7 @@
 Name:           mesa
 Summary:        Mesa graphics libraries
 Version:        21.3.1
-Release:        1
+Release:        2
 
 License:        MIT
 URL:            http://www.mesa3d.org
@@ -520,6 +520,9 @@ done
 %endif
 
 %changelog
+* Wed Oct 26 2022 zhouwenpei <zhouwenpei1@h-partners.com> - 21.3.1-2
+- Rebuild for next release
+
 * Thu Sep 16 2021 hanhui <hanhui15@huawei.com> - 21.3.1-1
 - upgrade to mesa-21.3.1
 - enable check
