@@ -21,7 +21,7 @@
 %define with_vulkan_hw 0
 %endif
 
-%ifarch %{arm} aarch64
+%ifarch %{arm} aarch64 sw_64
 %define with_xa        1
 %endif
 
@@ -38,7 +38,7 @@
 Name:           mesa
 Summary:        Mesa graphics libraries
 Version:        21.3.1
-Release:        2
+Release:        3
 
 License:        MIT
 URL:            http://www.mesa3d.org
@@ -520,6 +520,9 @@ done
 %endif
 
 %changelog
+* Thu Nov 3 2022 wuzx<wuzx1226@qq.com> - 21.3.1-3
+- Add sw64 architecture
+
 * Wed Oct 26 2022 zhouwenpei <zhouwenpei1@h-partners.com> - 21.3.1-2
 - Rebuild for next release
 
