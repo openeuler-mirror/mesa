@@ -65,7 +65,7 @@
 Name:           mesa
 Summary:        Mesa graphics libraries
 Version:        20.1.4
-Release:        2
+Release:        3
 License:        MIT
 URL:            http://www.mesa3d.org
 
@@ -370,6 +370,9 @@ sed -i -e 's/import xml.etree.cElementTree/import xml.etree.ElementTree/g' \
   %{nil}
 %meson_build
 
+%check
+%meson_test
+
 %install
 %meson_install
 
@@ -597,6 +600,9 @@ popd
 %endif
 
 %changelog
+* Thu Mar 16 2023 zhangpan <zhangpan103@h-partners.com> - 20.1.4-3
+- enable test
+
 * Thu Mar 25 2021 yanan <yanan@huawei.com> - 20.1.4-2
 - optimize the mesa spec
 
