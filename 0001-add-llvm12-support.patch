@@ -1,0 +1,21 @@
+From 160e4a0049d04140d416f855b0a034e26a4c2a2c Mon Sep 17 00:00:00 2001
+From: wangjunqiang <wangjunqiang@iscas.ac.cn>
+Date: Sun, 9 Apr 2023 16:02:55 +0800
+Subject: [PATCH] add llvm12 support
+
+---
+ custom-llvm.ini | 2 ++
+ 1 file changed, 2 insertions(+)
+ create mode 100644 custom-llvm.ini
+
+diff --git a/custom-llvm.ini b/custom-llvm.ini
+new file mode 100644
+index 0000000..67c0f1d
+--- /dev/null
++++ b/custom-llvm.ini
+@@ -0,0 +1,2 @@
++[binaries]
++llvm-config = '/usr/lib64/llvm12/bin/llvm-config-12-64'
+-- 
+2.33.0
+
