@@ -38,7 +38,7 @@
 Name:           mesa
 Summary:        Mesa graphics libraries
 Version:        21.3.1
-Release:        3
+Release:        4
 
 License:        MIT
 URL:            http://www.mesa3d.org
@@ -46,6 +46,7 @@ Source0:        https://mesa.freedesktop.org/archive/%{name}-%{version}.tar.xz
 
 Patch1:         backport-fix-build-err-on-arm.patch
 Patch2:         0001-evergreen-big-endian.patch
+Patch3:         0001-add-llvm12-support.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -69,7 +70,7 @@ BuildRequires:  libxshmfence-devel
 BuildRequires:  elfutils
 BuildRequires:  python3-devel
 BuildRequires:  gettext
-BuildRequires: %{llvm_pkg_prefix}llvm-devel >= 3.4-7
+BuildRequires: %{llvm_pkg_prefix}llvm12-devel >= 3.4-7
 %if 0%{?with_opencl}
 BuildRequires: %{llvm_pkg_prefix}clang-devel >= 3.0
 %endif
@@ -118,7 +119,7 @@ Obsoletes:      mesa-dri-filesystem < %{?epoch:%{epoch}:}%{version}-%{release}
 Summary:        Mesa libGL runtime libraries
 Requires:       %{name}-libglapi%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
 Requires:       libglvnd-glx%{?_isa} >= 1:1.2.0-1
- 
+
 %description libGL
 %{summary}.
 
@@ -323,12 +324,14 @@ export ASFLAGS="--generate-missing-build-notes=yes"
   -Degl=true \
   -Dglvnd=true \
   -Dmicrosoft-clc=disabled \
-  -Dllvm=true \
-  -Dshared-llvm=true \
+  -Dllvm=enabled \
+  -Dshared-llvm=enabled \
   -Dvalgrind=%{?with_valgrind:true}%{!?with_valgrind:false} \
   -Dbuild-tests=false \
   -Dselinux=true \
+  --native-file=custom-llvm.ini \
   %{nil}
+
 %meson_build
 
 %check
@@ -448,7 +451,7 @@ done
 %files libd3d
 %dir %{_libdir}/d3d/
 %{_libdir}/d3d/*.so.*
- 
+
 %files libd3d-devel
 %{_libdir}/pkgconfig/d3d.pc
 %{_includedir}/d3dadapter/
@@ -520,6 +523,9 @@ done
 %endif
 
 %changelog
+* Wed May 17 2022 wangjunqiang<wangjunqiang@iscas.ac.cn> - 21.3.1-4
+- add llvm12 build support
+
 * Thu Nov 3 2022 wuzx<wuzx1226@qq.com> - 21.3.1-3
 - Add sw64 architecture
 
